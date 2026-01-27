@@ -24,6 +24,7 @@ def run_one_epoch(model, loader, optimizer, device):
         logits = model(x)
         loss = criterion(logits, y)
         loss.backward()
+        torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
         optimizer.step()
         acc = accuracy_from_logits(logits, y)
         total_loss += loss.item()
@@ -67,12 +68,15 @@ def main():
     
     model = EmotionCNN(num_classes=len(class_to_id)).to(device)
     criterion = torch.nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3, weight_decay=1e-4)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', factor=0.5, patience=3)
     
     best_val_acc = 0.0
-    for epoch in range(1, 11):
+    for epoch in range(1, 31):
         train_loss, train_acc = run_one_epoch(model, train_loader, optimizer, device)
         val_loss, val_acc = evaluate(model, val_loader, device)
+        
+        scheduler.step(val_acc)
         
         if val_acc > best_val_acc:
             best_val_acc = val_acc

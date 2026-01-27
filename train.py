@@ -63,8 +63,8 @@ def main():
     samples, class_to_id = build_samples(TRAIN_DIR)
     train_samples, val_samples = split_samples(samples, val_ratio=0.1, seed=42)
     
-    train_loader = DataLoader(FerDataset(train_samples), batch_size=64, shuffle=True, num_workers=2)
-    val_loader = DataLoader(FerDataset(val_samples), batch_size=64, shuffle=False, num_workers=2)
+    train_loader = DataLoader(FerDataset(train_samples, augment=True), batch_size=64, shuffle=True, num_workers=2)
+    val_loader = DataLoader(FerDataset(val_samples, augment=False), batch_size=64, shuffle=False, num_workers=2)
     
     model = EmotionCNN(num_classes=len(class_to_id)).to(device)
     criterion = torch.nn.CrossEntropyLoss()
@@ -72,7 +72,8 @@ def main():
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', factor=0.5, patience=3)
     
     best_val_acc = 0.0
-    for epoch in range(1, 31):
+    patience_counter = 0
+    for epoch in range(1, 51):
         train_loss, train_acc = run_one_epoch(model, train_loader, optimizer, device)
         val_loss, val_acc = evaluate(model, val_loader, device)
         
@@ -84,9 +85,15 @@ def main():
         if val_acc > best_val_acc:
             best_val_acc = val_acc
             torch.save(model.state_dict(), "emotion_best.pt")
-            print(" ✓ Saved")
+            patience_counter = 0
+            print(f" ✓ Saved (best: {best_val_acc:.3f})")
         else:
+            patience_counter += 1
             print()
+        
+        if patience_counter >= 10:
+            print(f"\nEarly stopping: no improvement for 10 epochs. Best val acc: {best_val_acc:.3f}")
+            break
 
 if __name__ == "__main__":
     main()

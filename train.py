@@ -77,10 +77,16 @@ def main():
         val_loss, val_acc = evaluate(model, val_loader, device)
         
         scheduler.step(val_acc)
+        current_lr = optimizer.param_groups[0]['lr']
+        
+        print(f"Epoch {epoch:2d}/30 | Train: loss={train_loss:.4f} acc={train_acc:.3f} | Val: loss={val_loss:.4f} acc={val_acc:.3f} | LR={current_lr:.6f}", end="")
         
         if val_acc > best_val_acc:
             best_val_acc = val_acc
             torch.save(model.state_dict(), "emotion_best.pt")
+            print(" ✓ Saved")
+        else:
+            print()
 
 if __name__ == "__main__":
     main()

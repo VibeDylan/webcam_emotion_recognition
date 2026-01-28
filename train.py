@@ -1,9 +1,11 @@
 import torch
+import argparse
 from torch.utils.data import DataLoader
 from src.data.build_index import build_samples, split_samples
 from src.data.dataset_utils import TRAIN_DIR
 from src.data.fer_dataset import FerDataset
 from src.models.emotion_cnn import EmotionCNN
+from src.models.emotion_resnet import EmotionResNet
 
 def accuracy_from_logits(logits, y):
     pred = logits.argmax(dim=1)
@@ -58,7 +60,18 @@ def evaluate(model, loader, device):
     return avg_loss, avg_acc
 
 def main():
+    parser = argparse.ArgumentParser(description="Entraîner un modèle de détection d'émotions")
+    parser.add_argument("--model", type=str, default="cnn", choices=["cnn", "resnet"],
+                       help="Type de modèle à utiliser: 'cnn' ou 'resnet' (défaut: cnn)")
+    parser.add_argument("--pretrained", action="store_true",
+                       help="Utiliser des poids pré-entraînés pour ResNet (seulement si --model resnet)")
+    args = parser.parse_args()
+    
     device = "cuda" if torch.cuda.is_available() else "cpu"
+    print(f"Device: {device}")
+    print(f"Modèle: {args.model.upper()}")
+    if args.model == "resnet":
+        print(f"Pré-entraîné: {args.pretrained}")
     
     samples, class_to_id = build_samples(TRAIN_DIR)
     train_samples, val_samples = split_samples(samples, val_ratio=0.1, seed=42)
@@ -66,9 +79,17 @@ def main():
     train_loader = DataLoader(FerDataset(train_samples, augment=True), batch_size=64, shuffle=True, num_workers=2)
     val_loader = DataLoader(FerDataset(val_samples, augment=False), batch_size=64, shuffle=False, num_workers=2)
     
-    model = EmotionCNN(num_classes=len(class_to_id)).to(device)
+    if args.model == "resnet":
+        model = EmotionResNet(num_classes=len(class_to_id), pretrained=args.pretrained).to(device)
+        model_name = "emotion_resnet_best.pt"
+        lr = 1e-4 if args.pretrained else 1e-3
+    else:
+        model = EmotionCNN(num_classes=len(class_to_id)).to(device)
+        model_name = "emotion_best.pt"
+        lr = 1e-3
+    
     criterion = torch.nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=1e-3, weight_decay=1e-4)
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=1e-4)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', factor=0.5, patience=3)
     
     best_val_acc = 0.0
@@ -80,11 +101,11 @@ def main():
         scheduler.step(val_acc)
         current_lr = optimizer.param_groups[0]['lr']
         
-        print(f"Epoch {epoch:2d}/30 | Train: loss={train_loss:.4f} acc={train_acc:.3f} | Val: loss={val_loss:.4f} acc={val_acc:.3f} | LR={current_lr:.6f}", end="")
+        print(f"Epoch {epoch:2d}/50 | Train: loss={train_loss:.4f} acc={train_acc:.3f} | Val: loss={val_loss:.4f} acc={val_acc:.3f} | LR={current_lr:.6f}", end="")
         
         if val_acc > best_val_acc:
             best_val_acc = val_acc
-            torch.save(model.state_dict(), "emotion_best.pt")
+            torch.save(model.state_dict(), model_name)
             patience_counter = 0
             print(f" ✓ Saved (best: {best_val_acc:.3f})")
         else:

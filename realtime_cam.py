@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import torch
+import argparse
 from src.utils.model_loader import load_model, get_class_names
 from src.utils.prediction import predict_emotion
 
@@ -27,8 +28,23 @@ def extract_face(frame):
     return face_48, (x, y, w, h)
 
 if __name__ == "__main__":
+    # Parser pour les arguments en ligne de commande
+    parser = argparse.ArgumentParser(description="Détection d'émotions en temps réel")
+    parser.add_argument("--model", type=str, default="cnn", choices=["cnn", "resnet"],
+                       help="Type de modèle à utiliser: 'cnn' ou 'resnet' (défaut: cnn)")
+    args = parser.parse_args()
+    
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    model = load_model("emotion_best.pt", num_classes=7, device=device)
+    print(f"Device: {device}")
+    print(f"Modèle: {args.model.upper()}")
+    
+    # Choisir le fichier de modèle selon le type
+    if args.model == "resnet":
+        model_path = "emotion_resnet_best.pt"
+    else:
+        model_path = "emotion_best.pt"
+    
+    model = load_model(model_path, model_type=args.model, num_classes=7, device=device)
     id_to_class = get_class_names()
     
     history = []

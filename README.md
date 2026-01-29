@@ -105,3 +105,7 @@ L'application charge le modèle correspondant (`emotion_best.pt` ou `emotion_res
 - **ResNet18** : ResNet18 adapté en entrée 1 canal (grayscale), 7 classes ; option `--pretrained` pour initialiser avec ImageNet (conv1 adapté par moyenne des canaux).
 
 Les entrées sont des images **48×48 en niveaux de gris**. Les visages détectés par la webcam sont recadrés et redimensionnés à cette taille avant prédiction.
+
+## Contribuer
+
+Les contributions (bugs, idées, améliorations) sont bienvenues. Voir [CONTRIBUTE.md](CONTRIBUTE.md) pour les conventions (setup, style de code, docstrings, PR).

@@ -91,27 +91,31 @@ def main():
     criterion = torch.nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=1e-4)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='max', factor=0.5, patience=3)
+    best_val_loss = float('inf')
     
     best_val_acc = 0.0
     patience_counter = 0
+
     for epoch in range(1, 51):
         train_loss, train_acc = run_one_epoch(model, train_loader, optimizer, device)
         val_loss, val_acc = evaluate(model, val_loader, device)
-        
+
+
         scheduler.step(val_acc)
         current_lr = optimizer.param_groups[0]['lr']
-        
+
         print(f"Epoch {epoch:2d}/50 | Train: loss={train_loss:.4f} acc={train_acc:.3f} | Val: loss={val_loss:.4f} acc={val_acc:.3f} | LR={current_lr:.6f}", end="")
-        
+
         if val_acc > best_val_acc:
             best_val_acc = val_acc
+            best_val_loss = val_loss
             torch.save(model.state_dict(), model_name)
             patience_counter = 0
-            print(f" ✓ Saved (best: {best_val_acc:.3f})")
+            print(f" ✓ Saved (best acc: {best_val_acc:.3f})")
         else:
             patience_counter += 1
             print()
-        
+
         if patience_counter >= 10:
             print(f"\nEarly stopping: no improvement for 10 epochs. Best val acc: {best_val_acc:.3f}")
             break

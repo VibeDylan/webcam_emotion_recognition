@@ -28,7 +28,6 @@ def extract_face(frame):
     return face_48, (x, y, w, h)
 
 if __name__ == "__main__":
-    # Parser pour les arguments en ligne de commande
     parser = argparse.ArgumentParser(description="Détection d'émotions en temps réel")
     parser.add_argument("--model", type=str, default="cnn", choices=["cnn", "resnet"],
                        help="Type de modèle à utiliser: 'cnn' ou 'resnet' (défaut: cnn)")
@@ -38,7 +37,6 @@ if __name__ == "__main__":
     print(f"Device: {device}")
     print(f"Modèle: {args.model.upper()}")
     
-    # Choisir le fichier de modèle selon le type
     if args.model == "resnet":
         model_path = "emotion_resnet_best.pt"
     else:

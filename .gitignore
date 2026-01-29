@@ -46,3 +46,4 @@ Thumbs.db
 # Fichiers Markdown - Ignorer tous les .md sauf README.md
 *.md
 !README.md
+!CONTRIBUTE.md

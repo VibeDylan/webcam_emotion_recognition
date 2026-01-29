@@ -1,9 +1,14 @@
+"""CNN model for 7-class emotion recognition from 48x48 grayscale faces."""
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+
 class EmotionCNN(nn.Module):
+    """Convolutional network for FER: 4 conv blocks + BN + dropout, then 3 FC layers."""
+
     def __init__(self, num_classes=7):
+        """Build the CNN. Input: (B, 1, 48, 48). Output: (B, num_classes) logits."""
         super().__init__()
         self.conv1 = nn.Conv2d(1, 32, kernel_size=3, padding=1)
         self.bn1 = nn.BatchNorm2d(32)
@@ -20,6 +25,7 @@ class EmotionCNN(nn.Module):
         self.fc3 = nn.Linear(256, num_classes)
     
     def forward(self, x):
+        """Forward pass. x: (B, 1, 48, 48). Returns logits (B, num_classes)."""
         x = F.relu(self.bn1(self.conv1(x)))
         x = F.max_pool2d(x, kernel_size=2)
         x = self.dropout1(x)

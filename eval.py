@@ -1,6 +1,6 @@
 """
-Script d'évaluation du modèle de détection d'émotions.
-Calcule l'accuracy globale, l'accuracy par classe et la matrice de confusion sur le jeu de validation.
+Evaluation script for the emotion recognition model.
+Computes global accuracy, per-class accuracy, and confusion matrix on the validation set.
 """
 import argparse
 import torch
@@ -13,6 +13,7 @@ from src.utils.model_loader import load_model, get_class_names
 
 
 def evaluate(model, loader, device):
+    """Run the model on the loader and return ground-truth labels and predictions as numpy arrays."""
     model.eval()
     all_labels = []
     all_preds = []
@@ -29,6 +30,7 @@ def evaluate(model, loader, device):
 
 
 def main():
+    """Load model and validation data, compute metrics, and print accuracy and confusion matrix."""
     parser = argparse.ArgumentParser(description="Evaluate the model on the validation set")
     parser.add_argument("--model", type=str, default="cnn", choices=["cnn", "resnet"])
     parser.add_argument("--model_path", type=str, default=None,

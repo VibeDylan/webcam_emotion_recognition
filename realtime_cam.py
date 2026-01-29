@@ -1,3 +1,7 @@
+"""
+Real-time emotion detection from webcam.
+Loads a trained CNN or ResNet, detects faces, and displays predicted emotion with smoothing.
+"""
 import cv2
 import numpy as np
 import torch
@@ -7,17 +11,21 @@ from src.utils.prediction import predict_emotion
 
 FACE_CASCADE = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
 
+
 def start_cam(camera_index=0):
+    """Open the video capture device and return the VideoCapture object. Raises RuntimeError if it fails."""
     video = cv2.VideoCapture(camera_index)
     if not video.isOpened():
         raise RuntimeError(f"Impossible d'ouvrir la caméra {camera_index}")
     return video
 
 def detect_faces(frame):
+    """Detect faces in a BGR frame; return list of (x, y, w, h) bounding boxes."""
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     return FACE_CASCADE.detectMultiScale(gray, 1.1, 4)
 
 def extract_face(frame):
+    """Extract the largest face as a 48x48 grayscale image and its bbox; return (None, None) if no face."""
     faces = detect_faces(frame)
     if len(faces) == 0:
         return None, None

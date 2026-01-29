@@ -1,18 +1,25 @@
+"""PyTorch Dataset for FER-style samples: loads 48x48 grayscale images with optional augmentation."""
 from torch.utils.data import Dataset
 import torch
 import cv2
 import numpy as np
 import random
 
+
 class FerDataset(Dataset):
+    """Dataset of (image_path, class_id) samples; returns (tensor, label) with optional augmentation."""
+
     def __init__(self, samples, augment=False):
+        """samples: list of (path, class_id). augment: apply random flip, rotation, translation."""
         self.samples = samples
         self.augment = augment
     
     def __len__(self):
+        """Return the number of samples."""
         return len(self.samples)
-    
+
     def __augment_image(self, image):
+        """Apply random horizontal flip, small rotation, and translation. image: HxW grayscale."""
         if random.random() > 0.5:
             image = cv2.flip(image, 1)
         
@@ -33,6 +40,7 @@ class FerDataset(Dataset):
         return image
     
     def __getitem__(self, idx):
+        """Return (x, y): x (1, 48, 48) float in [0,1], y int class id."""
         image_path, label = self.samples[idx]
         image = cv2.imread(str(image_path), cv2.IMREAD_GRAYSCALE)
         if image.shape != (48, 48):

@@ -1,3 +1,7 @@
+"""
+Training script for emotion recognition models (CNN or ResNet).
+Trains on the FER-style dataset with train/val split, early stopping, and LR scheduling.
+"""
 import torch
 import argparse
 from torch.utils.data import DataLoader
@@ -7,12 +11,15 @@ from src.data.fer_dataset import FerDataset
 from src.models.emotion_cnn import EmotionCNN
 from src.models.emotion_resnet import EmotionResNet
 
+
 def accuracy_from_logits(logits, y):
+    """Compute classification accuracy from logits and ground-truth labels."""
     pred = logits.argmax(dim=1)
     acc = (pred == y).float().mean().item()
     return acc
 
 def run_one_epoch(model, loader, optimizer, device):
+    """Run one training epoch; return average loss and accuracy."""
     model.train()
     total_loss = 0.0
     total_acc = 0.0
@@ -39,6 +46,7 @@ def run_one_epoch(model, loader, optimizer, device):
 
 @torch.no_grad()
 def evaluate(model, loader, device):
+    """Evaluate the model on a loader; return average loss and accuracy."""
     model.eval()
     total_loss = 0.0
     total_acc = 0.0
@@ -60,7 +68,8 @@ def evaluate(model, loader, device):
     return avg_loss, avg_acc
 
 def main():
-    parser = argparse.ArgumentParser(description="Entraîner un modèle de détection d'émotions")
+    """Parse CLI args, build data loaders and model, then train with early stopping."""
+    parser = argparse.ArgumentParser(description="Train an emotion recognition model (CNN or ResNet)")
     parser.add_argument("--model", type=str, default="cnn", choices=["cnn", "resnet"],
                        help="Type de modèle à utiliser: 'cnn' ou 'resnet' (défaut: cnn)")
     parser.add_argument("--pretrained", action="store_true",

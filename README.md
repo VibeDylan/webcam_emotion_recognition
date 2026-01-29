@@ -1,10 +1,10 @@
 # Emotion Recognition - Real-time
 
-Projet de détection d'émotions en temps réel avec une webcam, utilisant un CNN entraîné sur le dataset FER2013.
+Projet de détection d'émotions en temps réel avec une webcam, utilisant un CNN ou un ResNet entraîné sur un dataset FER (7 classes).
 
 ## Description
 
-Ce projet permet de détecter les émotions faciales en temps réel via la webcam. Le modèle est un CNN entraîné sur 7 classes d'émotions : angry, disgust, fear, happy, neutral, sad, surprise.
+Ce projet permet de détecter les émotions faciales en temps réel via la webcam. Deux modèles sont disponibles : un **CNN** et un **ResNet18** (optionnellement pré-entraîné sur ImageNet). Les deux sont entraînés sur 7 classes d'émotions : angry, disgust, fear, happy, neutral, sad, surprise.
 
 ## Structure du projet
 
@@ -12,67 +12,82 @@ Ce projet permet de détecter les émotions faciales en temps réel via la webca
 emotion_rt/
 ├── src/
 │   ├── models/
-│   │   └── emotion_cnn.py          # Architecture du modèle CNN
+│   │   ├── emotion_cnn.py          # Architecture CNN
+│   │   └── emotion_resnet.py       # Architecture ResNet18 (1 canal, 7 classes)
 │   ├── data/
-│   │   ├── dataset_utils.py         # Utilitaires pour le dataset
-│   │   ├── build_index.py          # Construction de l'index et split train/val
-│   │   └── fer_dataset.py          # Dataset PyTorch pour le chargement des images
+│   │   ├── dataset_utils.py       # Chemins et utilitaires dataset
+│   │   ├── build_index.py         # Index et split train/val
+│   │   └── fer_dataset.py         # Dataset PyTorch (chargement images)
 │   └── utils/
-│       ├── model_loader.py         # Fonctions pour charger le modèle entraîné
-│       └── prediction.py           # Fonction de prédiction d'émotion
-├── train.py                         # Script d'entraînement du modèle
-├── realtime_cam.py                  # Application de détection temps réel
-└── emotion_best.pt                  # Modèle entraîné (sauvegardé automatiquement)
+│       ├── model_loader.py        # Chargement du modèle (CNN ou ResNet)
+│       └── prediction.py          # Prédiction d'émotion (face 48x48)
+├── data/
+│   └── train/                     # Images par classe (un dossier par émotion)
+├── train.py                        # Entraînement (CNN ou ResNet)
+├── realtime_cam.py                 # Détection temps réel webcam
+├── emotion_best.pt                 # Modèle CNN (généré par train.py)
+├── emotion_resnet_best.pt          # Modèle ResNet (généré par train.py)
+└── requirements.txt
 ```
 
 ## Installation
 
-Assure-toi d'avoir installé les dépendances :
-- torch
-- torchvision
-- opencv-python
-- numpy
+```bash
+python -m venv .venv
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+```
+
+Les données d'entraînement doivent être dans `data/train/` avec un sous-dossier par classe (ex. `data/train/angry/`, `data/train/happy/`, etc.).
 
 ## Utilisation
 
-### Entraînement du modèle
+### Entraînement
 
-Pour entraîner le modèle sur le dataset FER2013 :
-
+**CNN (défaut) :**
 ```bash
 python train.py
+# ou explicitement :
+python train.py --model cnn
+```
+Sauvegarde du meilleur modèle dans `emotion_best.pt`.
+
+**ResNet (sans poids ImageNet) :**
+```bash
+python train.py --model resnet
 ```
 
-Le script va :
-- Charger et préparer les données (split train/val 90/10)
-- Entraîner le modèle pendant 30 epochs
-- Sauvegarder automatiquement le meilleur modèle dans `emotion_best.pt`
-- Afficher la progression avec les métriques à chaque epoch
+**ResNet avec poids pré-entraînés ImageNet (recommandé) :**
+```bash
+python train.py --model resnet --pretrained
+```
+Sauvegarde du meilleur modèle dans `emotion_resnet_best.pt`.
+
+Comportement de l'entraînement :
+- Split train/val 90/10, batch_size 64
+- Jusqu'à 50 epochs avec **early stopping** (arrêt si pas d'amélioration de l'accuracy val pendant 10 epochs)
+- **ReduceLROnPlateau** sur l'accuracy de validation (factor=0.5, patience=3)
+- Sauvegarde automatique du meilleur modèle selon l'accuracy de validation
 
 ### Détection en temps réel
 
-Pour lancer la détection d'émotions en temps réel avec la webcam :
-
+**Avec le CNN :**
 ```bash
 python realtime_cam.py
+# ou :
+python realtime_cam.py --model cnn
 ```
 
-L'application va :
-- Charger le modèle entraîné
-- Détecter les visages dans le flux vidéo
-- Prédire l'émotion avec un lissage sur 10 frames (anti-flicker)
-- Afficher l'émotion et la confiance sur la vidéo
+**Avec le ResNet :**
+```bash
+python realtime_cam.py --model resnet
+```
 
-Appuie sur `q` pour quitter.
+L'application charge le modèle correspondant (`emotion_best.pt` ou `emotion_resnet_best.pt`), détecte les visages, prédit l'émotion avec un lissage sur 10 frames et affiche le label + confiance. Appuie sur **q** pour quitter.
 
-## Architecture du modèle
+## Modèles
 
-Le modèle utilise une architecture CNN avec :
-- 4 couches de convolution avec Batch Normalization
-- 3 couches fully connected
-- Dropout pour la régularisation
-- Max pooling pour réduire la dimensionnalité
+- **CNN** : 4 blocs convolution + BatchNorm, couches fully connected, dropout.
+- **ResNet18** : ResNet18 adapté en entrée 1 canal (grayscale), 7 classes ; option `--pretrained` pour initialiser avec ImageNet (conv1 adapté par moyenne des canaux).
 
-## Notes
-
-Le modèle est entraîné sur des images 48x48 en niveaux de gris. Les visages détectés sont automatiquement redimensionnés à cette taille avant la prédiction.
+Les entrées sont des images **48×48 en niveaux de gris**. Les visages détectés par la webcam sont recadrés et redimensionnés à cette taille avant prédiction.

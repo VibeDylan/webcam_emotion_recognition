@@ -24,6 +24,7 @@ emotion_rt/
 ├── data/
 │   └── train/                     # Images par classe (un dossier par émotion)
 ├── train.py                        # Entraînement (CNN ou ResNet)
+├── eval.py                         # Évaluation (accuracy, matrice de confusion)
 ├── realtime_cam.py                 # Détection temps réel webcam
 ├── emotion_best.pt                 # Modèle CNN (généré par train.py)
 ├── emotion_resnet_best.pt          # Modèle ResNet (généré par train.py)
@@ -68,6 +69,19 @@ Comportement de l'entraînement :
 - Jusqu'à 50 epochs avec **early stopping** (arrêt si pas d'amélioration de l'accuracy val pendant 10 epochs)
 - **ReduceLROnPlateau** sur l'accuracy de validation (factor=0.5, patience=3)
 - Sauvegarde automatique du meilleur modèle selon l'accuracy de validation
+
+### Évaluation
+
+Pour mesurer les performances du modèle sur le jeu de **validation** (même split que l'entraînement) :
+
+```bash
+python eval.py --model cnn
+# ou
+python eval.py --model resnet
+python eval.py --model resnet --model_path emotion_resnet_best.pt
+```
+
+Le script affiche : l'accuracy globale, l'accuracy par classe et la matrice de confusion (ligne = vraie émotion, colonne = prédite).
 
 ### Détection en temps réel
 

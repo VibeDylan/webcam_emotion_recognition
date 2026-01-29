@@ -1,4 +1,4 @@
-# Emotion Recognition - Real-time
+# Educational open-source emotion Recognition - Real-time
 
 Real-time emotion detection from a webcam using a CNN or ResNet trained on an FER-style dataset (7 classes).
 
